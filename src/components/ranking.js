@@ -1,22 +1,19 @@
 import styled from "styled-components";
 import axios from "axios";
-import { useContext, useEffect, useState } from "react";
-import { DataContext } from "../context/UserContext";
+import { useEffect, useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { useNavigate } from "react-router-dom";
-import logo from "../assets/shortly.png";
 import trophy from "../assets/trophy.png";
 
 export default function Ranking () {
     const [ isLoading, setIsLoading] = useState(true);
-    const [data, setData] = useState()
-    const navigate = useNavigate();
+    const [list, setList] = useState()
+    
 
-    const getData = async() => {
+    const getList = async() => {
         try {
             const response = await axios.get(`https://postgres-shortly.herokuapp.com/ranking`);
-            setData(response.data);
+            setList(response.data);
         
         setTimeout(()=>{setIsLoading(false)}, 1000)
         } catch (error) {
@@ -24,7 +21,8 @@ export default function Ranking () {
         }
     }
     useEffect(()=>{
-        getData();
+        setIsLoading(true);
+        getList();
         
     },[])
     const Render = () => {
@@ -32,20 +30,6 @@ export default function Ranking () {
             return(
                 <>
                 <Content>
-                <Header>
-                    <div className="user">
-                        <Skeleton width={190} height={18}/>
-                    </div>
-                    <div className="nav">
-                        <p>Home</p>
-                        <p>Ranking</p>
-                        <p>Sair</p>
-                    </div>
-                </Header>
-                <Logo>
-                    <h1>Shortly</h1>
-                    <img src={logo} alt="shortly logo" />                    
-                </Logo>
                 <Title>
                     <img src={trophy} alt="trophy" />
                     <h3>Ranking</h3>
@@ -64,31 +48,18 @@ export default function Ranking () {
             return(
                 <>
                 <Content>
-                <Header>
-                    <div className="user">Seja bem-vindo(a), USER</div>
-                    <div className="nav">
-                        <p>Home</p>
-                        <p>Ranking</p>
-                        <p>Sair</p>
-                    </div>
-                </Header>
-                <Logo>
-                    <h1>Shortly</h1>
-                    <img src={logo} alt="shortly logo" />                    
-                </Logo>
                 <Title>
                     <img src={trophy} alt="trophy" />
                     <h3>Ranking</h3>
                 </Title>
                 <Rank>
-                    {data.map((e, index) => <p>{index +1}. {e.name} - {e.linksCount} links - {e.visitCount} visualizações</p>)}
+                    {list.map((e, index) => <p key={e.id}>{index +1}. {e.name} - {e.linksCount} links - {e.visitCount} visualizações</p>)}
                 </Rank>
                 </Content>
                 </>
             )
         }
     }
-
 
     return(
         <>
@@ -105,44 +76,6 @@ const Content = styled.div`
     align-items: center;
     background-color: #FFFFFF;
     font-family: 'Lexend Deca';
-`;
-
-const Header = styled.div`
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    font-weight: 400;
-    font-size: 14px;
-    margin-top: 60px;
-
-    .user{
-        color: #5D9040;
-    }
-
-    .nav{
-        width: 180px;
-        display: flex;
-        justify-content: space-between;
-        color: #9C9C9C;
-    }
-`;
-
-const Logo = styled.div`
-    display: flex;
-    margin-top:30px;
-    align-items: center;
-    gap: 5px;
-    h1{
-        font-size: 64px;
-        font-weight: 200;
-        color: #000000;
-    }
-
-    img{
-        width: 102px;
-        height: 97px;
-        object-fit: contain;
-    }
 `;
 
 const Title = styled.div`

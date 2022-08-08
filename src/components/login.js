@@ -1,14 +1,16 @@
 import styled from "styled-components";
 import axios from "axios";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { DataContext } from "../context/UserContext";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/shortly.png";
 import { ThreeDots } from "react-loader-spinner";
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+
+
 
 export default function SignIn () {
+    const {setUserData} = useContext(DataContext);
     const [ password, setPassword] = useState("");
     const [ email, setEmail] = useState("");
     const [isDisabled, setIsDisabled] = useState(false);
@@ -26,25 +28,51 @@ export default function SignIn () {
         )
     }
 
-    const userLogin = async() => {
-        
+    async function validateLogin (event){
+        event.preventDefault();
+        setIsDisabled(true);
+        const body = {
+            email: email,
+            password: password
+        };
+        try {
+            const response = await axios.post("https://postgres-shortly.herokuapp.com/signin", body);
+            setUserData({
+                name: response.data.name,
+                token: {headers:{
+                    Authorization: `Bearer ${response.data.token}`
+               }}
+            });
+            localStorage.setItem('ShortlyToken', JSON.stringify({headers:{
+                Authorization: `Bearer ${response.data.token}`
+            }}));
+            localStorage.setItem('ShortlyName',JSON.stringify(response.data.name));
+            setIsDisabled(false);
+            navigate("/");
+        } catch (error) {
+            setTimeout(()=>{
+                setEmail("");
+                setPassword("");
+                setIsDisabled(false);
+                toast.error('Dados não válidos, cheque-os e tente novamente', {
+                    position: "top-center",
+                    autoClose: 2000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "colored"
+                    });
+            },"1000");
+        }
     }
 
     return(
         <>
             <Content>
-            <Header>
-                <div className="user"></div>
-                    <div className="nav">
-                    <p className="green">Entrar</p>
-                    <p>Cadastrar-se</p>
-                </div>
-            </Header>
-            <Logo onClick={()=>navigate("/")}>
-                <h1>Shortly</h1>
-                <img src={logo} alt="shortly logo" />                    
-            </Logo>
             <Form >
+                <form onSubmit={(event) => validateLogin(event)}>
                 <input
                 type="email"
                 value={email}
@@ -60,6 +88,7 @@ export default function SignIn () {
                 required
                 disabled= {isDisabled} ></input>
                 <ButtonToggle/>
+                </form>
             </Form>
             </Content>
             </>
@@ -83,60 +112,17 @@ const Content = styled.div`
     }
 `;
 
-const Header = styled.div`
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    font-weight: 400;
-    font-size: 14px;
-    margin-top: 60px;
 
-    .user{
-        color: #5D9040;
-    }
-
-    .nav{
-        width: 150px;
+const Form = styled.div`
+    form{
+        width: 769px;
+        font-weight: 400;
+        font-size: 14px;
         display: flex;
-        justify-content: space-between;
-        color: #9C9C9C;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 130px;
     }
-
-    .green{
-        color: #5D9040;
-    }
-    p{
-        cursor: pointer;
-    }
-`;
-
-const Logo = styled.div`
-    display: flex;
-    margin-top:30px;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    h1{
-        font-size: 64px;
-        font-weight: 200;
-        color: #000000;
-    }
-
-    img{
-        width: 102px;
-        height: 97px;
-        object-fit: contain;
-    }
-`;
-
-const Form = styled.form`
-    width: 769px;
-    font-weight: 400;
-    font-size: 14px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 130px;
     input{
         width: 100%;
         height: 60px;

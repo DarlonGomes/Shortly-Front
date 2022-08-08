@@ -3,11 +3,10 @@ import { createContext, useState } from "react";
 export const DataContext = createContext();
 
 const DataProvider = ({children}) => {
-    const [data, setData] = useState(null);
-    const [token, setToken] = useState(null);
+    const [userData, setUserData] = useState(null);
 
     return(
-        <DataContext.Provider value = {{data, setData, token, setToken}}>
+        <DataContext.Provider value = {{userData, setUserData}}>
             { children }
         </DataContext.Provider>
     )

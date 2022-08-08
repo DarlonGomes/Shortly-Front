@@ -1,91 +1,89 @@
-import styled from "styled-components";
 import axios from "axios";
 import { useContext, useEffect, useState } from "react";
 import { DataContext } from "../context/UserContext";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
-import { useNavigate } from "react-router-dom";
-import logo from "../assets/shortly.png";
-import trophy from "../assets/trophy.png";
+
+import LoadingHome from "./homeRenders/homeLoading";
+import RankingHome from "./homeRenders/homeRank";
+import LoggedHome from "./homeRenders/homeLogged";
 
 export default function Ranking () {
-    const [ isLoading, setIsLoading] = useState(true);
-    const [data, setData] = useState()
-    const navigate = useNavigate();
+    const {userData, setUserData} = useContext(DataContext);
+    const [ renderState, setRenderState] = useState("loading")
+    const [list, setList] = useState();
 
-    const getData = async() => {
+    const getList = async() => {
         try {
+            
             const response = await axios.get(`https://postgres-shortly.herokuapp.com/ranking`);
-            setData(response.data);
-        
-        setTimeout(()=>{setIsLoading(false)}, 1000)
+            setList(response.data);
+        setTimeout(()=>{setRenderState("withoutLogin")}, 1000)
         } catch (error) {
             return error
         }
     }
-    useEffect(()=>{
-        getData();
+
+    const getUserList = async() => {
         
-    },[])
-    const Render = () => {
-        if(isLoading){
-            return(
-                <>
-                <Content>
-                <Header>
-                    <div className="user">
-                    </div>
-                    <div className="nav">
-                        <p className="green">Entrar</p>
-                        <p>Cadastrar-se</p>
-                        
-                    </div>
-                </Header>
-                <Logo>
-                    <h1>Shortly</h1>
-                    <img src={logo} alt="shortly logo" />                    
-                </Logo>
-                <Title>
-                    <img src={trophy} alt="trophy" />
-                    <h3>Ranking</h3>
-                </Title>
-                    <Rank>
-                    <p><Skeleton height={20}/></p>
-                    <p><Skeleton height={20}/></p>
-                    <p><Skeleton height={20}/></p>
-                    <p><Skeleton height={20}/></p>
-                    <p><Skeleton height={20}/></p>
-                    </Rank>
-                    <h4>Crie sua conta para usar nosso serviço!</h4>
-                </Content>
-                </>
-            )
+        try {
+            const response = await axios.get(`https://postgres-shortly.herokuapp.com/users/me`, JSON.parse(localStorage.getItem('ShortlyToken')))
+            setList(response.data);
+            setRenderState("withLogin");
+        } catch (error) {
+            return error
+        }
+    }
+    const getToken = async () => {
+        
+        switch (true) {
+            case userData === null:
+                const token = JSON.parse(localStorage.getItem('ShortlyToken'));
+                const name = JSON.parse(localStorage.getItem('ShortlyName'));
+                if(token && name){                
+                    await setUserData({
+                        name: name,
+                        token: token
+                    })
+                    setRenderState("loggedIn-loading");
+                    return true
+                }else{
+                    return false
+                }
+            case userData != null:
+                return true
+            default:
+                return false;
+        }
+        
+    }
+
+     async function homepageRender () {
+        setRenderState("loading")
+        const result = await getToken();
+        if(result === true){
+            await getUserList();
         }else{
-            return(
-                <>
-                <Content>
-                <Header>
-                    <div className="user"></div>
-                    <div className="nav">
-                        <p className="green" onClick={()=> navigate("/signin")}>Entrar</p>
-                        <p>Cadastrar-se</p>
-                    </div>
-                </Header>
-                <Logo>
-                    <h1>Shortly</h1>
-                    <img src={logo} alt="shortly logo" />                    
-                </Logo>
-                <Title>
-                    <img src={trophy} alt="trophy" />
-                    <h3>Ranking</h3>
-                </Title>
-                <Rank>
-                    {data.map((e, index) => <p>{index +1}. {e.name} - {e.linksCount} links - {e.visitCount} visualizações</p>)}
-                </Rank>
-                <h4>Crie sua conta para usar nosso serviço!</h4>
-                </Content>
-                </>
-            )
+            getList();
+        }
+    }
+    useEffect(()=>{
+        homepageRender();
+    },[])
+
+    const Render = () => {
+        switch (true) {
+            case renderState === "withoutLogin":
+                return(
+                <RankingHome list={list}/>
+                )
+            
+            case renderState === "withLogin":
+                return(
+                    <LoggedHome list={list} token={userData.token} getUserList={getUserList}/>
+                )
+            default:
+                return(
+                    <LoadingHome/>
+                )
         }
     }
 
@@ -97,101 +95,5 @@ export default function Ranking () {
     )
 }
 
-const Content = styled.div`
-    width: 1017px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #FFFFFF;
-    font-family: 'Lexend Deca';
 
-    h4{
-        font-weight: 700;
-        color: #000000;
-        font-size: 36px;
-        margin-top: 82px;
-    }
-`;
 
-const Header = styled.div`
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    font-weight: 400;
-    font-size: 14px;
-    margin-top: 60px;
-
-    .user{
-        color: #5D9040;
-    }
-
-    .nav{
-        width: 150px;
-        display: flex;
-        justify-content: space-between;
-        color: #9C9C9C;
-    }
-
-    .green{
-        color: #5D9040;
-    }
-    p{
-        cursor: pointer;
-    }
-`;
-
-const Logo = styled.div`
-    display: flex;
-    margin-top:30px;
-    align-items: center;
-    gap: 5px;
-    h1{
-        font-size: 64px;
-        font-weight: 200;
-        color: #000000;
-    }
-
-    img{
-        width: 102px;
-        height: 97px;
-        object-fit: contain;
-    }
-`;
-
-const Title = styled.div`
-    display: flex;
-    margin-top: 80px;
-    align-items: center;
-    gap: 5px;
-    img{
-        width: 56px;
-        height: 50px;
-        object-fit: contain;
-    }
-
-    h3{
-        font-size: 36px;
-        font-weight: 700;
-        color: #000000;
-    }
-
-`;
-
-const Rank = styled.div`
-    width: 100%;
-    min-height: 50px;
-    background: #FFFFFF;
-    border: 1px solid rgba(120, 177, 89, 0.25);
-    box-shadow: 0px 4px 24px rgba(120, 177, 89, 0.12);
-    border-radius: 24px 24px 0px 0px;
-    box-sizing: border-box;
-    padding: 19px 40px 30px;
-    margin-top: 57px;
-    p{
-        font-weight: 500;
-        font-size: 22px;
-        line-height: 28px;
-        color: #000000;
-    }
-`;
